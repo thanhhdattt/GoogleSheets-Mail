@@ -1,3 +1,4 @@
+import Model.Email;
 import Model.User;
 import Services.SendEmail;
 import com.google.api.client.auth.oauth2.Credential;
@@ -10,7 +11,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
-import com.google.api.services.gmail.Gmail;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
@@ -41,6 +41,7 @@ public class GSheetsAPI {
     private static final String TOKENS_DIRECTORY_PATH = "tokens/Sheets";
     private static String SPREADSHEET_ID = "";
     private static String path, range, message;
+    private static long sleepTime;
     private static NetHttpTransport HTTP_TRANSPORT;
 
     static {
@@ -94,11 +95,18 @@ public class GSheetsAPI {
         return out;
     }
 
+    static boolean contains(List<Email> mails, String mail){
+        for(Email tmp : mails){
+            if(mail==tmp.getAddress()) return true;
+        }
+        return false;
+    }
+
     /**
      * Prints the names and courses info of courses in a sample spreadsheet:
      * https://docs.google.com/spreadsheets/d/1nI0Bw-gHn8ay5IN3FzQccF_G0jtDnOw5fkxYNAi0F7A/
      */
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException, InterruptedException {
 
         /**Load initial parameters*/
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -108,51 +116,62 @@ public class GSheetsAPI {
         path = p.getProperty("path");
         range = p.getProperty("range");
         message = p.getProperty("message");
+        sleepTime = Long.parseLong(p.getProperty("sleepTime"));
         SPREADSHEET_ID = getSheetsID(path);
-
-        /**Build a new authorized API client service.*/
-        Sheets service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-        Gmail gmail = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-        ValueRange response = service.spreadsheets().values()
-                .get(SPREADSHEET_ID, range)
-                .execute();
-        List<List<Object>> values = response.getValues();
-        Stack<User> users = new Stack<User>();
-        String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";        Pattern pattern = Pattern.compile(regex);
-        final int[] meowIndex = new int[1];
-        final int[] index = { 0 };
-        final Matcher[] matcher = new Matcher[1];
-        values.get(0).forEach((tmp) -> {
-            matcher[0] = pattern.matcher(tmp.toString());
-            if(matcher[0].matches()){
-                meowIndex[0] = index[0];
-            }
-            index[0]++;
-        });
-        values.forEach((row) -> {
-            User user = new User();
-            user.setUsername(row.get(1).toString());
-            user.setEmail(row.get(meowIndex[0]).toString());
-            users.add(user);
-        });
-
-        users.forEach((user) -> {
-            System.out.println(message);
-            System.out.println(user.toString() + "\n");
-            try {
-                SendEmail.send(user.getEmail());
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (GeneralSecurityException e) {
-                e.printStackTrace();
-            } catch (MessagingException e) {
-                e.printStackTrace();
-            }
-        });
-
+        Stack<User> users = new Stack<>();
+        Set<String> mails = new HashSet<String>();
+        Set<String> temp = new HashSet<String>();
+        while(true){
+            /**Build a new authorized API client service.*/
+            Sheets service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+            ValueRange response = service.spreadsheets().values()
+                    .get(SPREADSHEET_ID, range)
+                    .execute();
+            List<List<Object>> values = response.getValues();
+            String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";        Pattern pattern = Pattern.compile(regex);
+            final int[] meowIndex = new int[1];
+            final int[] index = { 0 };
+            final Matcher[] matcher = new Matcher[1];
+            values.get(0).forEach((tmp) -> {
+                matcher[0] = pattern.matcher(tmp.toString());
+                if(matcher[0].matches()){
+                    meowIndex[0] = index[0];
+                }
+                index[0]++;
+            });
+            values.forEach((row) -> {
+                User user = new User();
+                user.setUsername(row.get(1).toString());
+                user.setEmail(row.get(meowIndex[0]).toString());
+                if(!users.contains(user)) users.add(user);
+            });
+            users.forEach(user -> {
+                System.out.println(user.toString());
+                mails.add(user.getEmail());
+            });
+            System.out.println("\n");
+            mails.forEach(mail -> {
+                System.out.println(mail);
+                if(!temp.contains(mail)) {
+                    try {
+                        SendEmail.send(mail);
+                        temp.add(mail);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (GeneralSecurityException e) {
+                        e.printStackTrace();
+                    } catch (MessagingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            System.out.println(mails + "\n" + temp);
+            Thread.sleep(sleepTime);
+        }
     }
 }
+/**
+ * message=N\u01A1i t\u1EDB nhi\u1EC1u n\u1EAFng gi\u00F3 \nC\u1EADu b\u00EAn \u0111\u00F3 s\u1ED1ng sao \nT\u1EDB th\u00EC \u0111ang lao \u0111ao \nV\u00EC n\u00F4n nao nh\u1EDB c\u1EADu
+ * */

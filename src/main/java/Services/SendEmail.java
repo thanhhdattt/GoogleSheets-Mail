@@ -77,7 +77,7 @@ public class SendEmail {
         message = p.getProperty("message");
 
         /**Create MimeMessage to send*/
-        MimeMessage msg = createEmail(email, "me", "Leuu Leuu", message);
+        MimeMessage msg = createEmail(email, "me", "GOOGLE APIs TEST #1", message);
         sendMessage(service, "me", msg);
     }
 
