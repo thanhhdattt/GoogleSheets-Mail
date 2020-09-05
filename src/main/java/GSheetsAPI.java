@@ -53,7 +53,6 @@ public class GSheetsAPI {
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-
         }
     }
 
@@ -118,7 +117,7 @@ public class GSheetsAPI {
         message = p.getProperty("message");
         sleepTime = Long.parseLong(p.getProperty("sleepTime"));
         SPREADSHEET_ID = getSheetsID(path);
-        Stack<User> users = new Stack<>();
+        Set<User> users = new HashSet<User>();
         Set<String> mails = new HashSet<String>();
         Set<String> temp = new HashSet<String>();
         while(true){

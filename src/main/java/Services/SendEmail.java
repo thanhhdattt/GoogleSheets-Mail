@@ -22,6 +22,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.*;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -63,6 +64,10 @@ public class SendEmail {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
+    public static int getRandomNumber(int min, int max) {
+        return (int) ((Math.random() * (max - min)) + min);
+    }
+
     public static void send(String email) throws IOException, GeneralSecurityException, MessagingException {
         /**Build a new authorized API client service.*/
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
@@ -75,9 +80,55 @@ public class SendEmail {
         Properties p = new Properties();
         p.load(input);
         message = p.getProperty("message");
+        message = "GOOGLE APIs TEST #1. \nCó con mèo be bé\n" +
+                "Ngồi dưới gốc cây me\n" +
+                "Này cái cậu cuteee..\n" +
+                "Yêu bản thân đi nhé. :3 \n[THIS IS AN AUTOMATED MESSAGE - PLEASE DO NOT REPLY DIRECTLY TO THIS EMAIL].";
 
+        String[] poems = new String[10];
+        poems[0]="Có con mèo be bé\n" +
+                "Ở dưới gốc cây me\n" +
+                "Này cái cậu cutee\n" +
+                "Làm người yêu tôi nhé.";
+        poems[1] = "Cực bắc là Hà Giang\n" +
+                "Cực nam là Cà Mau\n" +
+                "Cực đáng iuu là cậu\n" +
+                "Cực iuu cậu không phải tớ. :3";
+        poems[2] = "Có một đống củi nhỏ\n" +
+                "Cậu cũng đốt thành tro\n" +
+                "Chỉ một tình yêu nhỏ\n" +
+                "Cậu cũng chẳng dành cho.";
+        poems[3] = "Có vài đốm lửa nhỏ\n" +
+                "Bỗng bùng cháy thật to\n" +
+                "Vẫn mấy câu hỏi nhỏ\n" +
+                "When will I be yours?";
+        poems[4] = "Tôi muốn tắt nắng đi\n" +
+                "Cho màu đừng nhạt mất\n" +
+                "Tôi muốn buộc cậu lại\n" +
+                "Cho cậu đừng chạy điii";
+        poems[5] = "Theo đuổi cậu và học\n" +
+                "Thực ra rất giống nhau\n" +
+                "Dù cho tớ cố gắng\n" +
+                "Vẫn bỏ lại phía sau.";
+        poems[6] = "Có một đàn chim nhỏ\n" +
+                "Bay nhảy chẳng âu lo\n" +
+                "Chỉ ước mình như nó\n" +
+                "Thích cậu chẳng đắn đo";
+        poems[7] = "Hoàng hôn thì màu tím\n" +
+                "Nhưng tớ thích màu hồng\n" +
+                "Tim tớ vẫn còn trống\n" +
+                "Cậu muốn chui vào không?";
+        poems[8] = "Có con chim nho nhỏ\n" +
+                "Đậu trên bãi cỏ xanh\n" +
+                "Có tình yêu nho nhỏ\n" +
+                "Không dành tặng cho anh";
+        poems[9] = "Bên tớ đầy nắng gió\n" +
+                "Cậu nơi đó sống sao\n" +
+                "Tớ thì đang lao đao\n" +
+                "Vì nôn nao nhớ cậu :3";
+        int poemIndex = getRandomNumber(0, 9);
         /**Create MimeMessage to send*/
-        MimeMessage msg = createEmail(email, "me", "GOOGLE APIs TEST #1", message);
+        MimeMessage msg = createEmail(email, "me", "GOOGLE APIs TEST #1", "Test #1\n\n".concat(poems[poemIndex].concat("\n\n[THIS IS AN AUTOMATED MESSAGE - PLEASE DO NOT REPLY DIRECTLY TO THIS EMAIL].\n")));
         sendMessage(service, "me", msg);
     }
 
