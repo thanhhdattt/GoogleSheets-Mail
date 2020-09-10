@@ -22,8 +22,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.*;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.List;
 import java.util.Properties;
 

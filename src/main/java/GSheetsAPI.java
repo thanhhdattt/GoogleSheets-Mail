@@ -1,4 +1,3 @@
-import Model.Email;
 import Model.User;
 import Services.SendEmail;
 import com.google.api.client.auth.oauth2.Credential;
@@ -40,8 +39,6 @@ public class GSheetsAPI {
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens/Sheets";
     private static String SPREADSHEET_ID = "";
-    private static String path, range, message;
-    private static long sleepTime;
     private static NetHttpTransport HTTP_TRANSPORT;
 
     static {
@@ -89,37 +86,30 @@ public class GSheetsAPI {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
+    /**Get sheets ID from the link*/
     public static String getSheetsID(String path){
         String out = path.substring(39, 39+44);
         return out;
     }
 
-    static boolean contains(List<Email> mails, String mail){
-        for(Email tmp : mails){
-            if(mail==tmp.getAddress()) return true;
-        }
-        return false;
-    }
-
     /**
-     * Prints the names and courses info of courses in a sample spreadsheet:
-     * https://docs.google.com/spreadsheets/d/1nI0Bw-gHn8ay5IN3FzQccF_G0jtDnOw5fkxYNAi0F7A/
+     * Prints the names and email info of users in a sample spreadsheet:
+     * https://docs.google.com/spreadsheets/d/1KIp6iOqBZEvY3A-q5oBzgLVim1Pb-VCYpgFdD2O39iE/
      */
-    public static void main(String... args) throws IOException, GeneralSecurityException, MessagingException, InterruptedException {
+    public static void main(String... args) throws IOException, InterruptedException {
 
         /**Load initial parameters*/
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         InputStream input = loader.getResourceAsStream("config.properties");
         Properties p = new Properties();
         p.load(input);
-        path = p.getProperty("path");
-        range = p.getProperty("range");
-        message = p.getProperty("message");
-        sleepTime = Long.parseLong(p.getProperty("sleepTime"));
+        String path = p.getProperty("path");
+        String range = p.getProperty("range");
+        Long sleepTime = Long.parseLong(p.getProperty("sleepTime"));
         SPREADSHEET_ID = getSheetsID(path);
-        Set<User> users = new HashSet<User>();
-        Set<String> mails = new HashSet<String>();
-        Set<String> temp = new HashSet<String>();
+        Set<User> users = new HashSet<>();
+        Set<String> mails = new HashSet<>();
+        Set<String> temp = new HashSet<>();
         while(true){
             /**Build a new authorized API client service.*/
             Sheets service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
@@ -129,7 +119,8 @@ public class GSheetsAPI {
                     .get(SPREADSHEET_ID, range)
                     .execute();
             List<List<Object>> values = response.getValues();
-            String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";        Pattern pattern = Pattern.compile(regex);
+            String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&'*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$";
+            Pattern pattern = Pattern.compile(regex);
             final int[] meowIndex = new int[1];
             final int[] index = { 0 };
             final Matcher[] matcher = new Matcher[1];
@@ -140,17 +131,20 @@ public class GSheetsAPI {
                 }
                 index[0]++;
             });
-            values.forEach((row) -> {
+            /**Get values from sheet and parse into list objects*/
+            values.forEach(row -> {
+                if(row.isEmpty()) return;
                 User user = new User();
                 user.setUsername(row.get(1).toString());
-                user.setEmail(row.get(meowIndex[0]).toString());
+                user.setEmail(row.get(5).toString());
                 if(!users.contains(user)) users.add(user);
             });
             users.forEach(user -> {
-                System.out.println(user.toString());
+//                System.out.println(user.toString());
                 mails.add(user.getEmail());
             });
             System.out.println("\n");
+            /**Get list of meow meow to send message*/
             mails.forEach(mail -> {
                 System.out.println(mail);
                 if(!temp.contains(mail)) {
@@ -167,6 +161,7 @@ public class GSheetsAPI {
                 }
             });
             System.out.println(mails + "\n" + temp);
+            /**Sleep to prevent over 100 requests per second and be banned for 10 minutes*/
             Thread.sleep(sleepTime);
         }
     }
